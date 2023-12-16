@@ -12,7 +12,6 @@ const middlewareLogRequest = require('./middleware/logs');
 const db = require('./config/database.js');
 
 
-
 // Konfigurasi multer untuk menyimpan file gambar
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -289,6 +288,31 @@ app.post('/logout', (req, res) => {
   }
 });
 
+// ganti kata sandi
+// Endpoint untuk mengganti kata sandi
+let userPassword = 'password'; //Contoh kata sandi awal
+
+app.post('/Changepassword', (req, res) => {
+  const { password, newPassword, confirmNewPassword } = req.body;
+
+  // Contoh validasi
+  if (newPassword !== confirmNewPassword) {
+    return res.status(400).json({ error: 'Konfirmasi kata sandi baru tidak sesuai.' });
+  }
+
+  // Verifikasi kata sandi lama (gantilah ini dengan logika yang sesuai)
+  if (password !== userPassword) {
+    return res.status(401).json({ error: 'Kata sandi lama tidak benar.' });
+  }
+
+  // Simpan kata sandi baru ke dalam database (gantilah ini dengan penyimpanan sesungguhnya)
+  userPassword = newPassword;
+
+  res.status(200).json({ success: true, message: 'Kata sandi berhasil diubah.' });
+});
+
+// Mulai server
+
 // Endpoint untuk mendapatkan data mentor
 app.get("/mentor/:id?", async (req, res) => {
   try {
@@ -323,7 +347,7 @@ app.get("/mentor/:id?", async (req, res) => {
 
 
 // TAMBAH JADWAL
-app.post('/add-schedule', async (req, res) => {
+app.post('/schedule', async (req, res) => {
   try {
     // Pastikan pengguna telah login
     if (!req.session.user) {
@@ -372,6 +396,93 @@ app.post('/add-schedule', async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 });
+
+app.get('/schedule', async (req, res) => {
+  try {
+    // Pastikan pengguna telah login
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    // Dapatkan ID pengguna dari sesi
+    const loggedInUserId = req.session.user.id;
+
+    // Dapatkan data jadwal dari tabel date dan date_time
+    const SQL = `
+      SELECT d.id AS date_id, d.date, dt.time
+      FROM date d
+      JOIN date_time dt ON d.id = dt.date_id
+      WHERE d.user_id = ?
+    `;
+
+    const [results] = await db.execute(SQL, [loggedInUserId]);
+
+    // Strukturkan data agar sesuai dengan kebutuhan Anda
+    const scheduleData = results.map((result) => ({
+      date_id: result.date_id,
+      // Menggunakan tanggal dari database tanpa perubahan
+      date: result.date,
+      time: result.time,
+    }));
+
+    return res.status(200).json({ message: 'Schedule retrieved successfully', schedule: scheduleData });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
+
+// TAMBAH TOPIC
+app.post('/topics', async (req, res) => {
+  try {
+    // Pastikan pengguna telah login
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    // Dapatkan data yang ingin ditambahkan dari body permintaan
+    const { name } = req.body;
+    console.log('Name:', name);
+
+    // Validasi input minimal
+    if (!name) {
+      return res.status(400).json({ message: 'Invalid request. Name is required.' });
+    }
+
+    // Tambahkan data topic ke tabel topic
+    const [result] = await db.execute('INSERT INTO topic (name) VALUES (?)', [name || null]);
+
+    return res.status(200).json({ message: 'Topic added successfully', topicId: result.insertId });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
+app.get('/topics', async (req, res) => {
+  try {
+    // Pastikan pengguna telah login
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    // Ambil semua data dari tabel topic
+    const [results] = await db.execute('SELECT * FROM topic');
+
+    // Strukturkan data sesuai kebutuhan Anda
+    const topicsData = results.map((result) => ({
+      id: result.id,
+      name: result.name,
+    }));
+
+    return res.status(200).json({ message: 'Topics retrieved successfully', topics: topicsData });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
 
 
 
