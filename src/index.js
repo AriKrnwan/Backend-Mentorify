@@ -60,8 +60,8 @@ app.post('/register', async (req, res) => {
     const placeholdersValues = Array(placeholders.length).fill('?').join(', ');
 
     const SQL = `INSERT INTO users (${placeholdersStr}) 
-                   SELECT ${placeholdersValues} FROM DUAL 
-                   WHERE NOT EXISTS (SELECT * FROM users WHERE email = ?)`;
+                  SELECT ${placeholdersValues} FROM DUAL 
+                  WHERE NOT EXISTS (SELECT * FROM users WHERE email = ?)`;
 
     const [result] = await db.query(SQL, [...values, email]);
 
@@ -128,7 +128,6 @@ app.post('/login', async (req, res) => {
       time_zone: user.time_zone,
       balance: user.balance
     };
-
 
     // Jika password valid, Anda dapat melanjutkan dengan respons login yang berhasil
     return res.status(200).json({ message: 'Login successful', user });
@@ -199,6 +198,27 @@ app.put('/profile', async (req, res) => {
     };
 
     return res.status(200).json({ message: 'User profile updated successfully', user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
+
+// LOGOUT
+app.post('/logout', (req, res) => {
+  try {
+    // Hapus sesi atau token di sisi server
+    // (Misalnya, menghapus informasi pengguna dari session)
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Error destroying session:', err);
+        return res.status(500).json({ message: 'Internal Server Error', error: err.message });
+      }
+
+      // Jika sukses logout, kirim respons sukses
+      return res.status(200).json({ success: true, message: 'Logout successful' });
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Internal Server Error', error: error.message });
