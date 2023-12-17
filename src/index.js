@@ -34,6 +34,12 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+app.use(expressSession({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+}));
+
 
 // REGISTER
 
@@ -72,10 +78,7 @@ app.post('/register', async (req, res) => {
 
     console.log('User inserted successfully');
 
-    // Generate JWT token
-    const token = jwt.sign({ email, role_id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    return res.status(200).send({ message: 'User added', token });
+    return res.status(200).send({ message: 'User added' });
   } catch (error) {
     console.error(error);
     return res.status(500).send({ message: 'Internal Server Error', error: error.message });
@@ -138,7 +141,11 @@ app.post('/login', async (req, res) => {
 });
 
 
+
+
 app.get('/profile', (req, res) => {
+  console.log('Session user:', req.session.user)
+
   // Periksa apakah pengguna telah login
   if (req.session.user) {
     return res.status(200).json({ message: 'User profile retrieved successfully', user: req.session.user });
@@ -156,6 +163,7 @@ app.put('/profile', async (req, res) => {
 
     // Dapatkan ID pengguna dari sesi
     const userId = req.session.user.id;
+    console.log(userId);
 
     // Dapatkan data yang ingin diupdate dari body permintaan
     const { full_name, institution, phone, birth_date, gender, topic, skill, bio, certification, experience, city, time_zone } = req.body;
