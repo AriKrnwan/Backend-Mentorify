@@ -40,6 +40,7 @@ const fileFilter = (req, file, cb) => {
 const bodyParser = require('body-parser');
 // const jwtMiddleware = require('./middleware/jwt');
 const expressSession = require('express-session');
+const { validationResult } = require('express-validator');
 
 app.use(expressSession({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -305,6 +306,58 @@ app.get("/mentor", async (req, res) => {
       .json({ message: "Internal Server Error", error: error.message });
   }
 });
+
+// TAMBAH JADWAL
+app.post('/add-schedule', async (req, res) => {
+  try {
+    // Pastikan pengguna telah login
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    // Dapatkan ID pengguna dari sesi
+    const userId = req.session.user.id;
+
+    // Dapatkan data yang ingin ditambahkan dari body permintaan
+    const { date, times } = req.body;
+
+    // Validasi input menggunakan express-validator
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    // // Mulai transaksi
+    // await db.beginTransaction();
+
+    try {
+      // Tambahkan tanggal ke tabel date
+      const [dateResult] = await db.execute('INSERT INTO date (date, user_id) VALUES (?, ?)', [date, userId]);
+      const dateId = dateResult.insertId;
+
+      // Tambahkan jam ke tabel date_time
+      for (const timeObject of times) {
+        const time = timeObject.time;
+        await db.execute('INSERT INTO date_time (date_id, time) VALUES (?, ?)', [dateId, time]);
+      }
+
+      // Commit transaksi jika semua query berhasil dieksekusi
+      // await db.commit();
+
+      return res.status(200).json({ message: 'Schedule added successfully' });
+    } catch (error) {
+      // Rollback transaksi jika terjadi kesalahan
+      // await db.rollback();
+
+      console.error(error);
+      return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
 
 
 
