@@ -233,6 +233,31 @@ app.post('/logout', (req, res) => {
   }
 });
 
+// ganti kata sandi
+// Endpoint untuk mengganti kata sandi
+let userPassword = 'password'; //Contoh kata sandi awal
+
+app.post('/Changepassword', (req, res) => {
+  const { password, newPassword, confirmNewPassword } = req.body;
+
+  // Contoh validasi
+  if (newPassword !== confirmNewPassword) {
+    return res.status(400).json({ error: 'Konfirmasi kata sandi baru tidak sesuai.' });
+  }
+
+  // Verifikasi kata sandi lama (gantilah ini dengan logika yang sesuai)
+  if (password !== userPassword) {
+    return res.status(401).json({ error: 'Kata sandi lama tidak benar.' });
+  }
+
+  // Simpan kata sandi baru ke dalam database (gantilah ini dengan penyimpanan sesungguhnya)
+  userPassword = newPassword;
+
+  res.status(200).json({ success: true, message: 'Kata sandi berhasil diubah.' });
+});
+
+// Mulai server
+
 
 
 
