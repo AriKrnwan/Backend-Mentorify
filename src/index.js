@@ -164,7 +164,8 @@ app.post('/login', async (req, res) => {
       experience: user.experience,
       city: user.city,
       time_zone: user.time_zone,
-      balance: user.balance
+      balance: user.balance,
+      price: user.price
     };
 
     // Jika password valid, Anda dapat melanjutkan dengan respons login yang berhasil
@@ -289,16 +290,29 @@ app.post('/logout', (req, res) => {
 });
 
 // Endpoint untuk mendapatkan data mentor
-app.get("/mentor", async (req, res) => {
+app.get("/mentor/:id?", async (req, res) => {
   try {
-    // Query untuk mendapatkan pengguna dengan role_id 2 (Mentor)
-    const SQL = "SELECT * FROM users WHERE role_id = ?";
+    // Periksa apakah ada parameter ID
+    const mentorId = req.params.id;
+
+    // Query untuk mendapatkan semua mentor atau mentor berdasarkan ID
+    let SQL = "SELECT * FROM users WHERE role_id = ?";
     const values = [2];
+
+    if (mentorId) {
+      // Jika ada parameter ID, tambahkan kondisi WHERE
+      SQL += " AND id = ?";
+      values.push(mentorId);
+    }
 
     const [results] = await db.execute(SQL, values);
 
     // Kembalikan hasil
-    return res.status(200).json({ users: results });
+    if (mentorId && results.length === 0) {
+      return res.status(404).json({ message: "Mentor not found" });
+    }
+
+    return res.status(200).json({ mentors: results });
   } catch (error) {
     console.error(error);
     return res
@@ -306,6 +320,7 @@ app.get("/mentor", async (req, res) => {
       .json({ message: "Internal Server Error", error: error.message });
   }
 });
+
 
 // TAMBAH JADWAL
 app.post('/add-schedule', async (req, res) => {
