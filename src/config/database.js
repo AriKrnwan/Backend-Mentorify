@@ -6,6 +6,7 @@ const dbPool = mysql.createPool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     multipleStatements: true,
+    port: process.env.DB_PORT// Add this line for custom port
     // waitForConnections: true,
     // connectionLimit: 10,
     // maxIdle: 10, // max idle connections, the default value is the same as `connectionLimit`
